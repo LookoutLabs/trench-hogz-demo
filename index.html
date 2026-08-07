@@ -114,6 +114,8 @@ body {
 // the hosting pipeline). This shim reassembles them transparently: any fetch
 // of index.wasm or index.pck returns the concatenated parts as one Response.
 (function () {
+	const BUILD = 'b6';   // bump on every deploy — busts the part cache in lockstep with this HTML
+	console.log('[THZ] web build ' + BUILD);
 	const origFetch = window.fetch.bind(window);
 	const SPLIT = {
 		'index.wasm': { parts: 5, type: 'application/wasm' },
@@ -126,7 +128,7 @@ body {
 		if (name) {
 			const spec = SPLIT[name];
 			const buffers = await Promise.all(
-				Array.from({ length: spec.parts }, (_, i) => origFetch(name + '.part' + i, options).then((r) => {
+				Array.from({ length: spec.parts }, (_, i) => origFetch(name + '.part' + i + '?' + BUILD, options).then((r) => {
 					if (!r.ok) throw new Error(r.status + ' : ' + r.url);
 					return r.arrayBuffer();
 				}))
