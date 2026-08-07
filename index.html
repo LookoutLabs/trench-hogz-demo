@@ -114,7 +114,7 @@ body {
 // the hosting pipeline). This shim reassembles them transparently: any fetch
 // of index.wasm or index.pck returns the concatenated parts as one Response.
 (function () {
-	const BUILD = 'b6';   // bump on every deploy — busts the part cache in lockstep with this HTML
+	const BUILD = 'b7';   // bump on every deploy — busts the part cache in lockstep with this HTML
 	console.log('[THZ] web build ' + BUILD);
 	const origFetch = window.fetch.bind(window);
 	const SPLIT = {
@@ -138,6 +138,32 @@ body {
 		}
 		return origFetch(resource, options);
 	};
+})();
+		</script>
+		<script>
+// POINTER-LOCK ARMING, browser-side. The game can't reliably request pointer
+// lock from engine code: on web, Godot dispatches input outside the DOM event
+// handler, so the request lacks a user gesture and gets deferred to arbitrary
+// later events (the "only right-click locks" bug). Instead the game publishes
+// its wish each frame (window.THZ_wantLock, via the Platform autoload) and
+// these listeners — real DOM handlers, guaranteed gesture context — take the
+// lock on any mousedown or key press. Esc is excluded (it exits/pauses), and
+// a denied request (post-Esc cooldown) is swallowed: the next press retries.
+window.THZ_wantLock = false;
+(function () {
+	function arm(e) {
+		if (!window.THZ_wantLock || document.pointerLockElement) return;
+		const c = document.getElementById('canvas');
+		if (!c || !c.requestPointerLock) return;
+		try {
+			const p = c.requestPointerLock();
+			if (p && p.catch) p.catch(function () {});
+		} catch (err) {}
+	}
+	window.addEventListener('mousedown', arm, true);
+	window.addEventListener('keydown', function (e) {
+		if (e.key !== 'Escape') arm(e);
+	}, true);
 })();
 		</script>
 		<script src="index.js"></script>
