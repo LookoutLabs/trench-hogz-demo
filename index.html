@@ -114,7 +114,7 @@ body {
 // the hosting pipeline). This shim reassembles them transparently: any fetch
 // of index.wasm or index.pck returns the concatenated parts as one Response.
 (function () {
-	const BUILD = 'b7';   // bump on every deploy — busts the part cache in lockstep with this HTML
+	const BUILD = 'b8';   // bump on every deploy — busts the part cache in lockstep with this HTML
 	console.log('[THZ] web build ' + BUILD);
 	const origFetch = window.fetch.bind(window);
 	const SPLIT = {
@@ -149,7 +149,11 @@ body {
 // these listeners — real DOM handlers, guaranteed gesture context — take the
 // lock on any mousedown or key press. Esc is excluded (it exits/pauses), and
 // a denied request (post-Esc cooldown) is swallowed: the next press retries.
-window.THZ_wantLock = false;
+// Starts TRUE so a click on the LOADING screen already hides the mouse — the
+// boot flows straight into scenes that want the lock anyway, and the moment
+// any scene needs a cursor the engine-side watchdog publishes false and
+// force-exits. (Per Walka, 7 Aug: loading-screen clicks should lock.)
+window.THZ_wantLock = true;
 (function () {
 	function arm(e) {
 		if (!window.THZ_wantLock || document.pointerLockElement) return;
